@@ -9,7 +9,10 @@ layout: default
            {% if site.title == "blank" -%}<span class="font-weight-bold">{{ site.first_name }}</span> {{ site.middle_name }} {{ site.last_name }}{%- else -%}{{ site.title }}{%- endif %}
           </h1>
           <p class="desc">{{ page.subtitle }}</p>
+          <script type="text/javascript" src="assets/js/d3.js"></script>
         </header>
+
+
 
         <article>
           {% if page.profile -%}
@@ -40,6 +43,114 @@ layout: default
             {{ content }}
           </div>
 
+          <body>
+  <div id="activity1">
+    <p>Bar Chart of Your Water Consumption</p>
+    <button type="button" id="sort_button">Sort me!</button>
+    <br><br>
+  </div>
+
+  
+  <script type="text/javascript">
+
+    // Load cereal.csv to a const variable cereals
+    var rowConverter = function(d){
+      return {
+        Name: d.Name,
+        Manufacturer: d.Manufacturer,
+        Calories: parseFloat(d.Calories),
+        Carbo: parseFloat(d.Carbo),
+        Sales: parseFloat(d.Sales),
+      };
+    }
+
+    
+    const cereals = d3.csv("assets/data/cereal-new.csv", rowConverter);
+
+    cereals.then(function(data){
+      var svgheight = 600;
+      var svgwidth = 700;
+      var padding = 150;
+
+      var xScale = d3.scaleLinear()
+              .domain([d3.min(data, function(d){return d.Sales;})-50,
+                   d3.max(data, function(d){return d.Sales;})
+                  ])
+              .range([padding, svgwidth-padding]);
+
+      var yScale = d3.scaleBand()
+              .domain(d3.range(data.length))
+              .range([svgheight, 0]);
+
+      var svg = d3.select("#activity1").append("svg")
+              .attr("width", svgwidth)
+              .attr("height", svgheight);
+                
+
+      var svg_bars = svg.selectAll(".bar")
+          .data(data).enter().append("rect")
+            .attr("class", "bar")
+            .on("mouseover", function(event, d){
+              console.log(event.timeStamp);
+              console.log(d);         
+
+              d3.select(this).transition().duration(20)
+                .attr("fill", "orange")
+
+            })
+          .on("mouseout", function(event, d) {
+            console.log(event.timeStamp);
+              console.log(d);
+
+            d3.select(this).transition().duration(2000)
+                .attr('fill', 'black')
+          })
+            .attr("x", function(d){
+            return 0;
+            })
+          .attr("y", function(d, i){
+            return yScale(i);
+          })
+          .attr("width", function(d){
+            return xScale(d.Sales);
+          })
+          .attr("height", function(d){
+            return (svgheight/data.length)-2;
+          })
+
+
+      // 2: add a click event to the button
+
+      let isDescending= false;
+
+      let sortBars = function(){
+        svg.selectAll(".bar").sort((a, b) => {
+          if (isDescending) {return a.Sales - b.Sales}
+          return b.Sales - a.Sales;
+        })
+        .transition("sorting")
+        .duration(1000)
+        .attr("y", (d, i) => {return yScale(i)});
+        isDescending = !isDescending;
+      }
+
+      d3.select("#sort_button").on("click", function(){
+        sortBars();
+      })
+
+      // 4: add zoom-in and -out capability
+
+      const zoomBars = d3.zoom().on("zoom", function(e, d) {
+        svg_bars.attr("transform", e.transform)
+      });
+
+    });
+    
+
+  </script>
+
+</body>
+
           {% if page.news -%}
           <!-- News -->
           {%- include news.html %}
@@ -62,5 +173,6 @@ layout: default
           </div>
           {%- endif %}
         </article>
+
 
 </div>
