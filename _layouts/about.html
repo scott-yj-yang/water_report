@@ -41,114 +41,187 @@ layout: default
             {{ content }}
           </div>
 
-
-          <body>
-  <div id="activity1">
-    <p>Bar Chart of Water Consumption</p>
-    <button type="button" id="sort_button">Sort me!</button>
-    <br><br>
-  </div>
-
-  
-  <script type="text/javascript">
-
-    // Load cereal.csv to a const variable cereals
-    var rowConverter = function(d){
-      return {
-        Name: d.Name,
-        Manufacturer: d.Manufacturer,
-        Calories: parseFloat(d.Calories),
-        Carbo: parseFloat(d.Carbo),
-        Sales: parseFloat(d.Sales),
-      };
+<script type="text/javascript">
+  let draw_plot2 = function (file_path) {
+    let rowConverter = data => {
+        return {
+            day: data["Date"],
+            drink: parseFloat(data["Data"])
+        }
     }
 
-    
-    const cereals = d3.csv("assets/data/cereal-new.csv", rowConverter);
+    let data = d3.csv(file_path, rowConverter)
 
-    cereals.then(function(data){
-      var svgheight = 600;
-      var svgwidth = 700;
-      var padding = 150;
+    data.then(data => {
 
-      var xScale = d3.scaleLinear()
-              .domain([d3.min(data, function(d){return d.Sales;})-50,
-                   d3.max(data, function(d){return d.Sales;})
-                  ])
-              .range([padding, svgwidth-padding]);
+        console.log(data)
 
-      var yScale = d3.scaleBand()
-              .domain(d3.range(data.length))
-              .range([svgheight, 0]);
+        let days = data.map(d=>d.day);
 
-      var svg = d3.select("#activity1").append("svg")
-              .attr("width", svgwidth)
-              .attr("height", svgheight);
-                
+        console.log(days)
 
-      var svg_bars = svg.selectAll(".bar")
-          .data(data).enter().append("rect")
+
+        let svgHeight = 700
+        let svgWidth = 1000
+        let padding = 50
+
+        let svg = d3.select("#plot2").append("svg")
+            .attr("width", svgWidth).attr("height", svgHeight);
+
+        let xScale = d3.scaleBand().domain(days)
+            .range([padding, svgWidth-padding]).paddingInner(0.15)
+        let yScale = d3.scaleLinear().domain([0, 3])
+            .range([svgHeight-padding, padding])
+
+        let xAxis = d3.axisBottom().scale(xScale);
+        let yAxis = d3.axisLeft().scale(yScale);
+
+        svg.append("g").call(xAxis).attr("class", "xAxis")
+            .attr("transform", `translate(0, ${svgHeight-padding})`);
+
+        svg.append("g").call(yAxis).attr("class", "yAxis")
+            .attr("transform", `translate(${padding}, 0)`);
+
+        let tooltip = d3.select("#plot2")
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("background-color", "white")
+            .style("border", "solid")
+            .style("border-width", "2px")
+            .style("border-radius", "5px")
+            .style("padding", "5px")
+
+
+
+        function handleMouseOver(event, d) {
+            d3.select(this).transition("be pink").duration(50).style("fill", "#e27c7c")
+            tooltip.transition("Show tooltip")
+                .duration(200)
+                .style("opacity", .9);
+            tooltip.html(`Day: ${d.day} <br> Volumn Drank: ${d.drink.toFixed(2)}`)
+                .style("left", (event.pageX - 100) + "px")
+                .style("top", (event.pageY - 100) + "px");
+        }
+
+        function handleMouseOut(event, d) {
+            d3.select(this).transition("be black").duration(500).style("fill", "#503f3f")
+            tooltip.transition("Show tooltip")
+                .duration(200)
+                .style("opacity", 0);
+        }
+
+        function handleMouseMove(event, d) {
+            tooltip
+                .style("left", (event.pageX-100) + "px")
+                .style("top", (event.pageY-100) + "px");
+        }
+
+        let bars = svg.selectAll(".bar").data(data)
+            .enter().append("rect")
             .attr("class", "bar")
-            .on("mouseover", function(event, d){
-              console.log(event.timeStamp);
-              console.log(d);         
-
-              d3.select(this).transition().duration(20)
-                .attr("fill", "orange")
-
-            })
-          .on("mouseout", function(event, d) {
-            console.log(event.timeStamp);
-              console.log(d);
-
-            d3.select(this).transition().duration(2000)
-                .attr('fill', 'black')
-          })
-            .attr("x", function(d){
-            return 0;
-            })
-          .attr("y", function(d, i){
-            return yScale(i);
-          })
-          .attr("width", function(d){
-            return xScale(d.Sales);
-          })
-          .attr("height", function(d){
-            return (svgheight/data.length)-2;
-          })
+            .attr("x", (d, i) => xScale(days[i]))
+            .attr("y", d => yScale(d.drink))
+            .attr("width", xScale.bandwidth())
+            .attr("height", d => svgHeight - yScale(d.drink) - padding)
+            .style("fill", "#503f3f")
+            .on("mouseover", handleMouseOver)
+            .on("mouseout", handleMouseOut)
+            .on("mousemove", handleMouseMove)
 
 
-      // 2: add a click event to the button
+        svg.append("text")
+            .attr("class", "x label")
+            .attr("text-anchor", "end")
+            .attr("x", svgWidth / 2 + 50)
+            .attr("font-size", 20)
+            .attr("y", svgHeight - 10 )
+            .text("Date");
 
-      let isDescending= false;
+        svg.append("text")
+            .attr("class", "y label")
+            .attr("text-anchor", "end")
+            .attr("x", -300)
+            .attr("y", 0)
+            .attr("font-size", 20)
+            .attr("dy", ".75em")
+            .attr("transform", "rotate(-90)")
+            .text("Volumn of Water Drank");
 
-      let sortBars = function(){
-        svg.selectAll(".bar").sort((a, b) => {
-          if (isDescending) {return a.Sales - b.Sales}
-          return b.Sales - a.Sales;
+        let isDescending = 0;
+
+        let cat = "estimated_hesitant_unsure";
+
+        let sort_func = (a, b) => {
+            if (isDescending===0) {
+                return b[cat] - a[cat];
+            } else if (isDescending === 1) {
+                return a[cat] - b[cat]
+            } else {
+                isDescending = -1;
+                return a.state_code.localeCompare(b.state_code)
+            }
+        }
+
+        let sortBars = function(){
+
+            flatStates.sort(sort_func)
+            let sorted_state_code = flatStates.map(d=>d.state_code)
+            xScale.domain(state_code)
+            // console.log(sorted_state_code)
+            svg.selectAll(".bar").sort(sort_func)
+                .transition("sorting")
+                .duration(1000)
+                .attr("x", (d, i) => xScale(state_code[i]));
+            xScale.domain(sorted_state_code)
+
+            isDescending++;
+
+            // console.log(flatStates)
+
+            svg.select(".xAxis").transition().duration(1000).call(xAxis)
+        }
+
+        d3.select("#sort_button").on("click", function(){
+            sortBars();
         })
-        .transition("sorting")
-        .duration(1000)
-        .attr("y", (d, i) => {return yScale(i)});
-        isDescending = !isDescending;
-      }
 
-      d3.select("#sort_button").on("click", function(){
-        sortBars();
-      })
+        let change_cat = category => {
+            cat = category.target.value
+            xScale.domain(state_code)
+            svg.selectAll(".bar")
+                .transition("change cat")
+                .duration(1000)
+                .attr("x", (d, i) => xScale(state_code[i]))
+                .attr("y", d=>yScale(d[cat]))
+                .attr("height", d => svgHeight - yScale(d[cat]) - padding);
+            //reset is descending
+            isDescending = 0
+        }
 
-      // 4: add zoom-in and -out capability
+        d3.select("#radio_plot2").on("change", change_cat)
 
-      const zoomBars = d3.zoom().on("zoom", function(e, d) {
-        svg_bars.attr("transform", e.transform)
-      });
+        // Add the title
+        svg.append("text")
+            .attr("class", "x label")
+            .attr("text-anchor", "middle")
+            .attr("x", svgWidth / 2)
+            .attr("y", padding - 20)
+            .attr("font-size", 20)
+            .text("Daily Water Consumption Plot");
 
-    });
-    
+    })
+}
+draw_plot2("../assets/data/testdata.csv");
+</script>
 
-  </script>
+<div>
+    <h3>Bar Chart of Water Drinking</h3>
 
-</body>
+    <div id="radio_plot2" class="center_plot">
+    </div>
+    <div id="plot2" class="center_plot"></div>
+</div>
 
 
           {% if page.news -%}
