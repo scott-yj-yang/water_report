@@ -2,7 +2,7 @@
 layout: about
 title: Dashboard
 permalink: /
-subtitle: "Dear user: John"
+subtitle: 
 
 profile:
   align: right
