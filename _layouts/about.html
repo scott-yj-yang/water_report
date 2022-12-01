@@ -76,11 +76,11 @@ layout: default
         let xAxis = d3.axisBottom().scale(xScale);
         let yAxis = d3.axisLeft().scale(yScale);
 
-        svg.append("g").call(xAxis).attr("class", "xAxis")
-            .attr("transform", `translate(0, ${svgHeight-padding})`);
+        // svg.append("g").call(xAxis).attr("class", "xAxis")
+        //     .attr("transform", `translate(0, ${svgHeight-padding})`);
 
-        svg.append("g").call(yAxis).attr("class", "yAxis")
-            .attr("transform", `translate(${padding}, 0)`);
+        // svg.append("g").call(yAxis).attr("class", "yAxis")
+        //     .attr("transform", `translate(${padding}, 0)`);
 
         let tooltip = d3.select("#plot2")
             .append("div")
@@ -123,11 +123,23 @@ layout: default
             .attr("x", (d, i) => xScale(days[i]))
             .attr("y", d => yScale(d.drink))
             .attr("width", xScale.bandwidth())
-            .attr("height", d => svgHeight - yScale(d.drink) - padding)
-            .style("fill", "#503f3f")
             .on("mouseover", handleMouseOver)
             .on("mouseout", handleMouseOut)
             .on("mousemove", handleMouseMove)
+            .style("fill", "#503f3f")
+            .attr("height", d => svgHeight - yScale(d.drink) - padding)
+
+        svg.selectAll(".bars").data(data)
+            .enter().append("rect")
+            .attr("class", "bars")
+            .attr("x", (d, i) => xScale(days[i])-10)
+            .attr("y", d => yScale(d.drink)-10)
+            .attr("width", xScale.bandwidth()+20)
+            .attr("height", d => svgHeight - yScale(d.drink) - padding + 10)
+            .style("fill", "#ffffff")
+            .transition("change height")
+            .duration(2000)
+            .attr("height", 0)
 
 
         svg.append("text")
@@ -209,6 +221,12 @@ layout: default
             .attr("y", padding - 20)
             .attr("font-size", 20)
             .text("Daily Water Consumption Plot");
+
+        svg.append("g").call(xAxis).attr("class", "xAxis")
+            .attr("transform", `translate(0, ${svgHeight-padding})`);
+
+        svg.append("g").call(yAxis).attr("class", "yAxis")
+            .attr("transform", `translate(${padding}, 0)`);
     })
 }
 </script>
