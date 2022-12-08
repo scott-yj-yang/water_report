@@ -162,42 +162,6 @@ layout: default
 
         let isDescending = 0;
 
-        let cat = "estimated_hesitant_unsure";
-
-        let sort_func = (a, b) => {
-            if (isDescending===0) {
-                return b[cat] - a[cat];
-            } else if (isDescending === 1) {
-                return a[cat] - b[cat]
-            } else {
-                isDescending = -1;
-                return a.state_code.localeCompare(b.state_code)
-            }
-        }
-
-        let sortBars = function(){
-
-            flatStates.sort(sort_func)
-            let sorted_state_code = flatStates.map(d=>d.state_code)
-            xScale.domain(state_code)
-            // console.log(sorted_state_code)
-            svg.selectAll(".bar").sort(sort_func)
-                .transition("sorting")
-                .duration(1000)
-                .attr("x", (d, i) => xScale(state_code[i]));
-            xScale.domain(sorted_state_code)
-
-            isDescending++;
-
-            // console.log(flatStates)
-
-            svg.select(".xAxis").transition().duration(1000).call(xAxis)
-        }
-
-        d3.select("#sort_button").on("click", function(){
-            sortBars();
-        })
-
         let change_cat = category => {
             cat = category.target.value
             xScale.domain(state_code)
@@ -210,8 +174,6 @@ layout: default
             //reset is descending
             isDescending = 0
         }
-
-        d3.select("#radio_plot2").on("change", change_cat)
 
         // Add the title
         svg.append("text")
